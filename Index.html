@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Meat The Flavour</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Meat The Flavour">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#1f2937">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html, body { overscroll-behavior: none; -webkit-overflow-scrolling: touch; margin: 0; padding: 0; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
+    .no-select { -webkit-user-select: none; user-select: none; }
+    * { -webkit-tap-highlight-color: transparent; }
+    ::-webkit-scrollbar { display: none; }
+    input, select { font-size: 16px !important; }
+  </style>
+</head>
+<body class="no-select">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useMemo } = React;
+    const smokingData = {
+      Beef: {
+        Rib: { smokerTempMin: 225, smokerTempMax: 250, targetTempMin: 195, targetTempMax: 205, timePerPound: 0, fixedTimeHours: [6, 8], description: 'Beef ribs - low and slow until probe tender' },
+        Ribeye: { smokerTempMin: 225, smokerTempMax: 250, targetTempMin: 130, targetTempMax: 135, timePerPound: 0.5, fixedTimeHours: null, description: 'Reverse sear for perfect medium-rare' },
+        Brisket: { smokerTempMin: 225, smokerTempMax: 250, targetTempMin: 190, targetTempMax: 205, timePerPound: 1.75, fixedTimeHours: null, description: 'The king of BBQ - patience is key' },
+        Forerib: { smokerTempMin: 225, smokerTempMax: 250, targetTempMin: 130, targetTempMax: 135, timePerPound: 0.5, fixedTimeHours: null, description: 'Premium roast - keep it pink inside' },
+        'Fillet Steak': { smokerTempMin: 225, smokerTempMax: 225, targetTempMin: 130, targetTempMax: 135, timePerPound: 0.75, fixedTimeHours: null, description: 'Delicate cut - smoke then sear' },
+        'Sirloin Steak': { smokerTempMin: 225, smokerTempMax: 225, targetTempMin: 130, targetTempMax: 135, timePerPound: 0.75, fixedTimeHours: null, description: 'Classic steak - finish on high heat' }
+      },
+      Pork: {
+        Shoulder: { smokerTempMin: 225, smokerTempMax: 250, targetTempMin: 195, targetTempMax: 205, timePerPound: 1.75, fixedTimeHours: null, description: 'Perfect for pulled pork' },
+        Ribs: { smokerTempMin: 225, smokerTempMax: 250, targetTempMin: 190, targetTempMax: 203, timePerPound: 0, fixedTimeHours: [4, 6], description: 'Use the bend test for doneness' },
+        'Rolled Joint': { smokerTempMin: 225, smokerTempMax: 250, targetTempMin: 145, targetTempMax: 145, timePerPound: 0.75, fixedTimeHours: null, description: "Keep it juicy - don't overcook" }
+      },
+      Chicken: {
+        'Whole Chicken': { smokerTempMin: 250, smokerTempMax: 275, targetTempMin: 165, targetTempMax: 175, targetNote: '(breast) / (thigh)', timePerPound: 0.75, fixedTimeHours: null, description: 'Higher temp for crispy skin' },
+        Wings: { smokerTempMin: 250, smokerTempMax: 275, targetTempMin: 175, targetTempMax: 175, timePerPound: 0, fixedTimeHours: [1.5, 2], description: 'Crispy and smoky perfection' },
+        Legs: { smokerTempMin: 250, smokerTempMax: 275, targetTempMin: 175, targetTempMax: 175, timePerPound: 0, fixedTimeHours: [1.5, 2], description: 'Dark meat loves the smoke' },
+        Thighs: { smokerTempMin: 250, smokerTempMax: 275, targetTempMin: 175, targetTempMax: 175, timePerPound: 0, fixedTimeHours: [1.5, 2], description: 'Juicy and full of flavour' }
+      },
+      Fish: {
+        'Whole Salmon': { smokerTempMin: 200, smokerTempMax: 225, targetTempMin: 140, targetTempMax: 145, timePerPound: 0.4, fixedTimeHours: null, description: 'Classic smoked fish' },
+        'Salmon Fillet': { smokerTempMin: 200, smokerTempMax: 225, targetTempMin: 140, targetTempMax: 145, timePerPound: 0, fixedTimeHours: [0.75, 1], description: 'Quick and delicious' },
+        'Whole Trout': { smokerTempMin: 200, smokerTempMax: 225, targetTempMin: 140, targetTempMax: 145, timePerPound: 0.35, fixedTimeHours: null, description: 'Delicate and smoky' },
+        'Whole Sea Bass': { smokerTempMin: 200, smokerTempMax: 225, targetTempMin: 140, targetTempMax: 145, timePerPound: 0.35, fixedTimeHours: null, description: 'Light smoke for light fish' },
+        'Tuna Steak': { smokerTempMin: 200, smokerTempMax: 225, targetTempMin: 125, targetTempMax: 130, timePerPound: 0, fixedTimeHours: [0.5, 0.75], description: 'Keep it rare in the center' }
+      }
+    };
+    const meatEmojis = { Beef: '🥩', Pork: '🐷', Chicken: '🍗', Fish: '🐟' };
+    function fToC(f) { return Math.round((f - 32) * 5 / 9); }
+    function formatTemp(min, max, unit) {
+      if (unit === 'C') {
+        const minC = fToC(min); const maxC = fToC(max);
+        if (minC === maxC) return `${minC}°C`;
+        return `${minC}-${maxC}°C`;
+      }
+      if (min === max) return `${min}°F`;
+      return `${min}-${max}°F`;
+    }
+    function formatTime(hours) {
+      if (hours < 1) return `${Math.round(hours * 60)} minutes`;
+      const wholeHours = Math.floor(hours);
+      const minutes = Math.round((hours - wholeHours) * 60);
+      if (minutes === 0) return `${wholeHours} hour${wholeHours !== 1 ? 's' : ''}`;
+      return `${wholeHours}h ${minutes}m`;
+    }
+    function MeatTheFlavour() {
+      const [meatType, setMeatType] = useState('');
+      const [cut, setCut] = useState('');
+      const [weight, setWeight] = useState('');
+      const [weightUnit, setWeightUnit] = useState('lbs');
+      const [tempUnit, setTempUnit] = useState('F');
+      const cuts = meatType ? Object.keys(smokingData[meatType]) : [];
+      const calculation = useMemo(() => {
+        if (!meatType || !cut || !weight || parseFloat(weight) <= 0) return null;
+        const data = smokingData[meatType][cut];
+        let weightInPounds = parseFloat(weight);
+        if (weightUnit === 'kg') weightInPounds = weightInPounds * 2.205;
+        let minTime, maxTime;
+        if (data.fixedTimeHours) {
+          [minTime, maxTime] = data.fixedTimeHours;
+        } else {
+          const baseTime = weightInPounds * data.timePerPound;
+          minTime = baseTime * 0.85;
+          maxTime = baseTime * 1.15;
+        }
+        return {
+          smokerTemp: formatTemp(data.smokerTempMin, data.smokerTempMax, tempUnit),
+          targetTemp: formatTemp(data.targetTempMin, data.targetTempMax, tempUnit),
+          targetNote: data.targetNote || null,
+          minTime: formatTime(minTime),
+          maxTime: formatTime(maxTime),
+          description: data.description
+        };
+      }, [meatType, cut, weight, weightUnit, tempUnit]);
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-orange-900">
+          <div className="max-w-lg mx-auto px-4 py-6">
+            <div className="text-center mb-6">
+              <h1 className="text-3xl font-bold text-orange-400 mb-1 tracking-tight">🔥 Meat The Flavour</h1>
+              <p className="text-gray-400 text-sm">Smoking time & temperature calculator</p>
+            </div>
+            <div className="bg-gray-800/90 backdrop-blur rounded-2xl shadow-2xl p-5 border border-gray-700">
+              <div className="mb-5 flex justify-between items-center">
+                <span className="text-gray-400 text-sm">Temperature Unit</span>
+                <div className="inline-flex rounded-lg bg-gray-700 p-1">
+                  <button onClick={() => setTempUnit('F')} className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${tempUnit === 'F' ? 'bg-orange-500 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>°F</button>
+                  <button onClick={() => setTempUnit('C')} className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${tempUnit === 'C' ? 'bg-orange-500 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>°C</button>
+                </div>
+              </div>
+              <div className="mb-5">
+                <label className="block text-orange-300 text-sm font-semibold mb-2">Select Your Meat</label>
+                <select value={meatType} onChange={(e) => { setMeatType(e.target.value); setCut(''); setWeight(''); }} className="w-full p-4 bg-gray-700 border border-gray-600 rounded-xl text-white text-base focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all">
+                  <option value="">Choose meat type...</option>
+                  {Object.keys(smokingData).map((meat) => <option key={meat} value={meat}>{meatEmojis[meat]} {meat}</option>)}
+                </select>
+              </div>
+              {meatType && (
+                <div className="mb-5 animate-fadeIn">
+                  <label className="block text-orange-300 text-sm font-semibold mb-2">Select Your Cut</label>
+                  <select value={cut} onChange={(e) => setCut(e.target.value)} className="w-full p-4 bg-gray-700 border border-gray-600 rounded-xl text-white text-base focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all">
+                    <option value="">Choose cut...</option>
+                    {cuts.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              )}
+              {cut && (
+                <div className="mb-5 animate-fadeIn">
+                  <label className="block text-orange-300 text-sm font-semibold mb-2">Enter Weight</label>
+                  <div className="flex gap-3">
+                    <input type="number" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="Enter weight..." min="0.1" step="0.1" className="flex-1 p-4 bg-gray-700 border border-gray-600 rounded-xl text-white text-base focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all" />
+                    <select value={weightUnit} onChange={(e) => setWeightUnit(e.target.value)} className="w-20 p-4 bg-gray-700 border border-gray-600 rounded-xl text-white text-base focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-center">
+                      <option value="lbs">lbs</option>
+                      <option value="kg">kg</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+              {calculation && (
+                <div className="mt-6 animate-fadeIn">
+                  <div className="bg-gradient-to-r from-orange-600 to-red-600 rounded-xl p-0.5">
+                    <div className="bg-gray-900 rounded-xl p-4">
+                      <h2 className="text-xl font-bold text-orange-400 mb-3 flex items-center gap-2">{meatEmojis[meatType]} {cut}</h2>
+                      <p className="text-gray-400 italic text-sm mb-4">{calculation.description}</p>
+                      <div className="space-y-3">
+                        <div className="bg-gray-800 rounded-xl p-4 border border-gray-700 flex justify-between items-center">
+                          <div className="flex items-center gap-2"><span className="text-xl">🌡️</span><span className="text-gray-400 text-sm">Smoker Temp</span></div>
+                          <p className="text-2xl font-bold text-orange-400">{calculation.smokerTemp}</p>
+                        </div>
+                        <div className="bg-gray-800 rounded-xl p-4 border border-gray-700 flex justify-between items-center">
+                          <div className="flex items-center gap-2"><span className="text-xl">🎯</span><span className="text-gray-400 text-sm">Target Internal</span></div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-green-400">{calculation.targetTemp}</p>
+                            {calculation.targetNote && <span className="text-xs text-gray-500">{calculation.targetNote}</span>}
+                          </div>
+                        </div>
+                        <div className="bg-gray-800 rounded-xl p-4 border border-gray-700 flex justify-between items-center">
+                          <div className="flex items-center gap-2"><span className="text-xl">⏱️</span><span className="text-gray-400 text-sm">Cook Time</span></div>
+                          <p className="text-2xl font-bold text-yellow-400">{calculation.minTime} - {calculation.maxTime}</p>
+                        </div>
+                      </div>
+                      <div className="mt-4 p-3 bg-orange-900/30 rounded-xl border border-orange-700/50">
+                        <p className="text-orange-200 text-xs"><strong>💡 Pro Tip:</strong> Always cook to temperature, not time. Rest meat 10-15 mins after cooking.</p>
+                      </div>
+                    </div>
+                  </div>
+                  <button onClick={() => { setMeatType(''); setCut(''); setWeight(''); }} className="w-full mt-4 p-3 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-xl font-semibold transition-all active:scale-95">Start Over</button>
+                </div>
+              )}
+            </div>
+            <p className="text-center text-gray-600 text-xs mt-4">Made with 🔥 for BBQ lovers</p>
+          </div>
+        </div>
+      );
+    }
+    ReactDOM.render(<MeatTheFlavour />, document.getElementById('root'));
+  </script>
+</body>
+</html>
